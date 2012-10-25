@@ -1,0 +1,114 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package edu.msu.cme.pyro.cluster;
+
+import edu.msu.cme.pyro.cluster.dist.DistanceCalculator;
+import edu.msu.cme.pyro.cluster.io.ClusterFileOutput;
+import edu.msu.cme.pyro.cluster.io.ClusterOutput;
+import edu.msu.cme.pyro.cluster.utils.Cluster;
+import edu.msu.cme.pyro.cluster.utils.ClusterFactory;
+import edu.msu.cme.pyro.derep.IdMapping;
+import edu.msu.cme.pyro.derep.SampleMapping;
+import edu.msu.cme.rdp.taxatree.Taxon;
+import edu.msu.cme.rdp.taxatree.TaxonHolder;
+import java.io.*;
+import java.util.HashMap;
+import java.util.Map;
+
+/**
+ *
+ * @author fishjord
+ */
+public class CDHitToRDP {
+
+    public static void main(String[] args) throws Exception {
+        if (args.length != 4 && args.length != 5) {
+            System.err.println("USAGE: ClusterReplay <idmapping> <sample_mapping> <cdhit_file> <cluster_out>");
+            return;
+        }
+
+        IdMapping<Integer> idMapping = IdMapping.fromFile(new File(args[0]));
+        SampleMapping<String> sampleMapping = SampleMapping.fromFile(new File(args[1]));
+
+        ClusterOutput clustOut = new ClusterFileOutput(idMapping, sampleMapping, new PrintStream(new File(args[3])));
+        ClusterFactory factory = new ClusterFactory();
+	BufferedReader cdhitReader = new BufferedReader(new FileReader(args[2]));
+
+	double cutoff = 0, dist;
+        Map<Integer, Cluster> clustMap = new HashMap();
+
+	System.err.println("Beginning CDHit cluster file conversion");
+	System.err.println("Input file: " + args[2]);
+	System.err.println("Output file: " + args[3]);
+
+	Cluster curr = null, tmp;
+
+	String line = null;
+
+	int lineno = 0;
+	int numClusters = 0;
+	int intSeqid;
+	String strSeqid;
+
+	//>Cluster 0
+	//0       402nt, >GE87P2X01C4TG4_cs_nbp_rc... at +/99.75%
+        try {
+            while ((line = cdhitReader.readLine()) != null) {
+		lineno++;
+		if(line.startsWith(">Cluster")) {
+		    curr = null;
+		    numClusters++;
+		    continue;
+		}
+
+		String[] lexemes = line.split("\\s+");
+		if(lexemes.length != 5) {
+		    continue;
+		}
+
+		/*
+		  Some parsing checks, look for the at, first thing is a number, etc
+		 */
+		Integer.valueOf(lexemes[0]); //Make sure the first item is a number
+		if (!lexemes[3].equals("at")) {
+		    throw new IOException("Malformed cluster member line (missing 'at')");
+		}
+
+		if(!lexemes[2].startsWith(">") || !lexemes[2].endsWith("...")) {
+		    throw new IOException("Malformed seqid token");
+		}
+
+		if(lexemes[4].endsWith("%")) {
+		    dist = Double.valueOf(lexemes[4].substring(2, lexemes[4].length() - 1));
+		    if(dist < cutoff) {
+			cutoff = dist;
+		    }
+		} else if(!lexemes[4].contains("*")) {
+		    throw new IOException("Malformed percent identity token");
+		}
+
+		strSeqid = lexemes[2].substring(1, lexemes[2].length() - 3);
+		intSeqid = idMapping.get(strSeqid);
+
+		tmp = factory.createSingleton(intSeqid);
+		if(curr == null) {
+		    curr = tmp;
+		} else {
+		    curr = factory.mergeCluster(curr, tmp, 0);
+		}
+            }
+
+        } catch (Exception e) {
+	    throw new IOException("Failed while parsing line " + lineno + ": " + line, e);
+        }
+
+        System.out.println(cutoff + ": " + numClusters + " clusters");
+
+        clustOut.printClusters(factory, (int)((1 - cutoff) * DistanceCalculator.MULTIPLIER));
+        clustOut.close();
+
+	cdhitReader.close();
+    }
+}

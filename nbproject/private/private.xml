@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-private xmlns="http://www.netbeans.org/ns/project-private/1">
+    <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/1">
+        <file>
+            <url>src/edu/msu/cme/pyro/cluster/utils/AlignSeqMatch.java</url>
+            <line>28</line>
+        </file>
+    </editor-bookmarks>
+    <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/1">
+        <file>file:/local/NetBeansProjects/Clustering/src/edu/msu/cme/rdp/hadoop/distance/mapred/ByteSeqInputFormat.java</file>
+        <file>file:/local/NetBeansProjects/Clustering/src/edu/msu/cme/rdp/hadoop/distance/mapred/DistanceAndComparisonMapper.java</file>
+        <file>file:/local/NetBeansProjects/Clustering/src/edu/msu/cme/rdp/hadoop/distance/mapred/DistanceReducer.java</file>
+        <file>file:/local/NetBeansProjects/Clustering/src/edu/msu/cme/rdp/hadoop/distance/DistancesMain.java</file>
+        <file>file:/local/NetBeansProjects/Clustering/src/org/apache/hadoop/mapred/ReadPartialResultFile.java</file>
+        <file>file:/local/NetBeansProjects/Clustering/src/edu/msu/cme/rdp/hadoop/distance/mapred/keys/DistanceAndComparison.java</file>
+        <file>file:/local/NetBeansProjects/Clustering/src/edu/msu/cme/rdp/hadoop/distance/mapred/keys/MatrixRange.java</file>
+        <file>file:/local/NetBeansProjects/Clustering/src/edu/msu/cme/rdp/hadoop/distance/mapred/DistancePartitioner.java</file>
+        <file>file:/local/NetBeansProjects/Clustering/src/edu/msu/cme/rdp/hadoop/oneoff/DistancesMainOneOff.java</file>
+        <file>file:/local/NetBeansProjects/Clustering/src/edu/msu/cme/rdp/hadoop/oneoff/ByteSeqInputFormatOneOff.java</file>
+        <file>file:/local/NetBeansProjects/Clustering/src/edu/msu/cme/pyro/cluster/ClusterMain.java</file>
+        <file>file:/local/NetBeansProjects/Clustering/src/edu/msu/cme/pyro/cluster/utils/CDHitToRDP.java</file>
+        <file>file:/local/NetBeansProjects/Clustering/src/edu/msu/cme/pyro/cluster/utils/AbstractClusterFactory.java</file>
+        <file>file:/local/NetBeansProjects/Clustering/src/edu/msu/cme/pyro/cluster/io/ClusterOutput.java</file>
+        <file>file:/local/NetBeansProjects/Clustering/src/edu/msu/cme/pyro/cluster/parse/RDPClustParser.java</file>
+    </open-files>
+</project-private>

@@ -232,6 +232,8 @@ public final class RDPClustParser {
      *
      *
      *
+     *
+     *
 
      *
      * @param toFind
@@ -290,7 +292,8 @@ public final class RDPClustParser {
 
         while (Character.isWhitespace(c)) {
             if (c == '\n') {
-                return "";
+                eol = true;
+                return null;
             }
 
             c = clusterFile.read();
@@ -311,9 +314,9 @@ public final class RDPClustParser {
 
     private void skipToEol() throws IOException {
         int c;
-        while(true) {
+        while (true) {
             c = clusterFile.read();
-            if(c == '\n') {
+            if (c == '\n') {
                 eol = true;
                 return;
             }
@@ -367,12 +370,12 @@ public final class RDPClustParser {
         }
 
         String clustLabel = null, sampleName = null, seqCountStr = null;
-	boolean reuseLastCluster = false;
+        boolean reuseLastCluster = false;
         for (int index = 0; index < numClusters; index++) {
             int clusterId = -1;
             for (int sample = 0; sample < clusterSamples.size(); sample++) {
                 if (reuseLastCluster) {
-		    reuseLastCluster = false;
+                    reuseLastCluster = false;
                 } else {
                     try {
                         clustLabel = readNextLexeme();
@@ -381,27 +384,27 @@ public final class RDPClustParser {
                         break;
                     }
 
-		    if (clustLabel.equals("")) {
-			//We hit the end of this cutoff...
-			//Lets just check to make sure we were processing the last cluster in this cutoff...to be safe
-			if (index + 1 != numClusters) {
-			    throw new IOException("Not enough clusters (" + index + " / " + numClusters + ") in cutoff " + cutoff);
-			}
-			reuseLastCluster = true;
-			break;
-		    }
+                    if (clustLabel == null || clustLabel.equals("")) {
+                        //We hit the end of this cutoff...
+                        //Lets just check to make sure we were processing the last cluster in this cutoff...to be safe
+                        if (index + 1 != numClusters) {
+                            throw new IOException("Not enough clusters (" + index + " / " + numClusters + ") in cutoff " + cutoff);
+                        }
+                        reuseLastCluster = true;
+                        break;
+                    }
 
-		    if (eol) {
-			throw new IOException("Malformed cluster line in cutoff " + cutoff + ": \"" + line + "\"");
-		    }
-		    sampleName = readNextLexeme();
-		    if (eol) {
-			throw new IOException("Malformed cluster line in cutoff " + cutoff + ": \"" + line + "\"");
-		    }
-		    seqCountStr = readNextLexeme();
-		    if (eol) {
-			throw new IOException("Malformed cluster line in cutoff " + cutoff + ": \"" + line + "\"");
-		    }
+                    if (eol) {
+                        throw new IOException("Malformed cluster line in cutoff " + cutoff + ": \"" + line + "\"");
+                    }
+                    sampleName = readNextLexeme();
+                    if (eol) {
+                        throw new IOException("Malformed cluster line in cutoff " + cutoff + ": \"" + line + "\"");
+                    }
+                    seqCountStr = readNextLexeme();
+                    if (eol) {
+                        throw new IOException("Malformed cluster line in cutoff " + cutoff + ": \"" + line + "\"");
+                    }
                 }
 
                 int currClustId = 0;
@@ -414,8 +417,6 @@ public final class RDPClustParser {
                     throw new IOException("Invalid cluster id " + clustLabel + " or sequence count " + seqCountStr + " in cutoff " + cutoff);
                 }
 
-		System.err.println(cutoff + "\t" + currClustId + "\t" + sampleName + "\t" + seqCount);
-
                 if (seqCount == 0) {
                     skipToEol();
                     continue;
@@ -426,7 +427,7 @@ public final class RDPClustParser {
                 }
                 if (currClustId != clusterId) {
                     //We ended up in the wrong cluster...whoopsies
-		    reuseLastCluster = true;
+                    reuseLastCluster = true;
                     break;
                     //throw new IOException("Excepected cluster id " + index + " but read " + currClustId + " in cutoff " + cutoff);
                 }
@@ -434,11 +435,17 @@ public final class RDPClustParser {
                 Cluster c = new Cluster(currClustId, seqCount);
 
                 if (parseSeqids) {
+                    String addSeqid;
                     Set<String> seqs = new HashSet();
-                    while(!eol) {
-                        seqs.add(readNextLexeme());
+                    while (!eol) {
+                        addSeqid = readNextLexeme();
+                        if (addSeqid != null) {
+                            seqs.add(addSeqid);
+                        }
                     }
                     if (seqs.size() != seqCount) {
+                        System.err.println("Cutoff: " + cutoff + " ClusterLable: " + clustLabel + " sampleName: " + sampleName + " Cluster: " + currClustId + ", seqcount: " + seqCount + " read seqid: " + seqs.size());
+                        System.err.println(seqs);
                         throw new IOException("Expected " + seqCount + " seqids for cluster " + index + " but counted " + seqs.size() + " instead in cutoff " + cutoff);
                     }
                     clustersToSeqs.put(c, seqs);

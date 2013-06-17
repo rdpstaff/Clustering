@@ -188,7 +188,7 @@ public class Dereplicator {
 
                     for (String seqid : reader.getSeqIdSet()) {
                         Sequence seq = reader.readSeq(seqid);
-                        
+
                         if (seq.getSeqName().startsWith("#")) {
                             echoSeqs.add(seq);
                             continue;
@@ -200,7 +200,7 @@ public class Dereplicator {
                         } else if(expectedSeqLength != seq.getSeqString().length()) {
                             throw new IOException("Sequence " + seq.getSeqName() + "'s length (" + seq.getSeqString().length() + ") doesn't match expected length " + expectedSeqLength);
                         }
-                        
+
                         derep.addSeq(seq);
                         sampleMapping.addSeq(sampleName, seq.getSeqName());
                     }
@@ -242,7 +242,7 @@ public class Dereplicator {
                 for (Sequence seq : uniqueSeqs.keySet()) {
                     List<String> ids = uniqueSeqs.get(seq);
                     idMapping.addIds(count++, ids);
-                    seqWriter.writeSeq(seq.getSeqName(), seq.getDesc(), seq.getSeqString());
+                    seqWriter.writeSeq(seq.getSeqName(), seq.getDesc() + ";size=" + ids.size() + ";", seq.getSeqString());
 
                     if (qualOut != null && seq instanceof QSequence) {
                         String qseqStr = "";
@@ -266,7 +266,7 @@ public class Dereplicator {
                     if (!keepCommonGaps) {
                         seqString = removeCommonGaps(allGapCols, seqString);
                     }
-                    seqWriter.writeSeq(seq.getSeqName(), "", seqString);
+                    seqWriter.writeSeq(seq.getSeqName(), seq.getDesc() + ";size=" + ids.size() + ";", seqString);
                 }
 
                 if (maskId == null) {
@@ -276,7 +276,7 @@ public class Dereplicator {
                         if (!keepCommonGaps) {
                             seqString = removeCommonGaps(allGapCols, seqString);
                         }
-                        seqWriter.writeSeq(seq.getSeqName(), "", seqString);
+                        seqWriter.writeSeq(seq.getSeqName(), seqString);
                     }
                 }
             }

@@ -19,8 +19,10 @@ package edu.msu.cme.pyro.cluster;
 import edu.msu.cme.pyro.derep.Dereplicator;
 import edu.msu.cme.pyro.cluster.dist.DistanceCalculator;
 import edu.msu.cme.pyro.cluster.dist.ThinEdge;
+import edu.msu.cme.pyro.cluster.io.ClusterToBiom;
 import edu.msu.cme.pyro.cluster.utils.AlignSeqMatch;
 import edu.msu.cme.pyro.cluster.io.LocalEdgeReader;
+import edu.msu.cme.pyro.cluster.io.RDPClustParser;
 import edu.msu.cme.pyro.cluster.utils.RepresenativeSeqs;
 import edu.msu.cme.pyro.derep.ExplodeMappings;
 import edu.msu.cme.pyro.derep.IdMapping;
@@ -285,6 +287,20 @@ public class ClusterMain {
         out.close();
     }
 
+    private static void convertClusterBiom(String[] args) throws IOException {
+        if (args.length != 2) {
+            System.err.println("USAGE: <cluster_file> <cutoff>");
+            return;
+        }
+
+        File clusterFile = new File(args[0]);
+        String cutoff = args[1];
+
+        RDPClustParser parser = new RDPClustParser(clusterFile);
+        ClusterToBiom.writeCutoff(parser.getCutoff(cutoff), System.out);
+        parser.close();
+    }
+
     public static void printUsage() {
         System.err.println("USAGE: Main <command name> command args...");
         System.err.println("\tCommands: derep, dmatrix, cluster, dump-edges, convert-column-matrix" + (hadoop ? " hadoop-distance" : ""));
@@ -304,6 +320,7 @@ public class ClusterMain {
         System.err.println("\tto-fasta         - Convert a sequence file to fasta format");
         System.err.println("\tto-unaligned-fasta         - Convert a sequence file to fasta format");
         System.err.println("\tfilter-seqs      - Remove sequences from a file");
+        System.err.println("\tcluster-to-biom  - Convert a cluster file to a biom otu table");
         if (hadoop) {
             System.err.println("\thadoop - Calculate distances using hadoop distance calculator");
         }
@@ -355,6 +372,8 @@ public class ClusterMain {
             toUnalignedFasta(newArgs);
         } else if (commandName.equals("filter-seqs")) {
             removeSeqs(newArgs);
+        } else if (commandName.equals("cluster-to-biom")) {
+            convertClusterBiom(newArgs);
         } else {
             printUsage();
         }

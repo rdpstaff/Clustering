@@ -335,11 +335,15 @@ public final class RDPClustParser {
         }
 
 
-        String line = clusterFile.readLine();
-        if (line == null) {
-            return null;
-        }
-
+        String line = null;
+        // sometimes the cutoff starts with the empty line instead of distance
+        do{
+            line = clusterFile.readLine();
+            if (line == null) {
+                return null;
+            }
+        } while ( line.trim().equals(""));
+                
         lexemes = line.split("\\s+");
         if (lexemes[0].equals("distance") && lexemes[1].equals("cutoff:") && lexemes.length == 3) {
             cutoff = lexemes[2];
@@ -406,7 +410,7 @@ public final class RDPClustParser {
                         throw new IOException("Malformed cluster line in cutoff " + cutoff + ": \"" + line + "\"");
                     }
                 }
-
+                
                 int currClustId = 0;
                 int seqCount = 0;
 

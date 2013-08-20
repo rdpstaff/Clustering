@@ -1,16 +1,16 @@
-# RDP memory-constrained hierarchical clustering tools (mcClust)
+## RDP memory-constrained hierarchical clustering tools (mcClust)
 
-## Intro
+### Intro
 
 RDP mcClust is an efficient implementation of a single round memory-constrained clustering algorithm proposed by Loewenstein (Loewenstein et al., 2008, Bioinformatics 24:i41-i49). 
 It offers separate programs that can be combined to pre-process (dereplication and distance calculation)
  or post-process clustering results ( converting to biom output and finding representative sequences). 
  The clustering result can be used by AbundanceStats (https://github.com/rdpstaff/AbundanceStats) to calculate diversity measurements.
 
-## Setup
+### Setup
 See RDPTools (https://github.com/rdpstaff/RDPTools) to install.
 
-## Usage
+### Usage
 
 * Cluster sample(s)
 

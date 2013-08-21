@@ -8,7 +8,7 @@ It offers separate programs that can be combined to pre-process (dereplication a
  The clustering result can be used by AbundanceStats (https://github.com/rdpstaff/AbundanceStats) to calculate diversity measurements.
 
 ### Setup
-See RDPTools (https://github.com/rdpstaff/RDPTools) to install.
+Some commands in this tutorial depend on RDP AlignmentTools. See RDPTools (https://github.com/rdpstaff/RDPTools) to install.
 
 ### Usage
 
@@ -36,20 +36,22 @@ ignoring positions where either or both sequences have a gap. Sequences must ove
 		java -Xmx2g -jar /path/to/Clustering.jar/Clustering.jar cluster-to-biom all_seq_complete.clust 0.03 > all_seq_complete.clust.biom 
 
 * Get represenative sequences from a cluster file
-
-		java -Xmx2g -jar /path/to/Clustering.jar rep-seqs --id-mapping all_seqs.ids --one-rep-per-otu all_seq_complete.clust 0.03 derep.fa
+	If there are more than one alignment files, need to merge them into one file first.
 		
+		java -jar /path/to/AlignmentTools.jar alignment-merger alignment merged_aligned.fasta
+		java -Xmx2g -jar /path/to/Clustering.jar rep-seqs --id-mapping all_seqs.ids --one-rep-per-otu all_seq_complete.clust 0.03 merged_aligned.fasta
+		
+* Select or exclude sequences from a file
+	
+		java -Xmx2g -jar /path/to/Clustering.jar filter-seqs selected.id merged_aligned.fasta false > selected.fasta
+
 * Explode a dereplicated sequence file back to sample replicated files
 
-		java -Xmx2g -jar /path/to/Clustering.jar explode-mappings --out-dir explode-mappings all_seqs.ids all_seqs.samples derep.fa
+		java -Xmx2g -jar /path/to/Clustering.jar explode-mappings --out-dir explode-mappings all_seqs.ids all_seqs.samples selected.fasta
 
 * Convert a sequence file to fasta format		
 
 		java -Xmx2g -jar /path/to/Clustering.jar to-fasta sample_1_aligned.stk sample_1_aligned.fasta
-
-* Select or exclude sequences from a file
-	
-		java -Xmx2g -jar /path/to/Clustering.jar filter-seqs selected.id derep.fa false > selected.fasta
 		
 * Remove mapping entries for sequences externally filtered
 

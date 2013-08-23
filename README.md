@@ -18,24 +18,38 @@ Some commands in this tutorial depend on RDP AlignmentTools. See RDPTools (https
 ignoring positions where either or both sequences have a gap. Sequences must overlap by at least 25 bases or else distance calculation will fail. Three steps are involved to do the clustering:
 
 	* dereplicate aligned sequences
-  	An example command to run deprelicate with multiple aligned sequence files.
+	
+  	An example command to run deprelicate with multiple aligned sequence files with mask sequence "#=GC_RF".
 		
 			java -Xmx2g -jar /path/to/Clustering.jar derep -m '#=GC_RF' -o derep.fa all_seqs.ids all_seqs.samples sample_1_aligned.fasta sample_2_aligned.fasta
 	
 	* calculate sequence distances
 		
-			java -Xmx2g -jar /path/to/Clustering.jar dmatrix --id-mapping all_seqs.ids --in derep.fa --outfile derep_matrix.bin -l 25 --dist-cutoff 0.15
+			java -Xmx2g -jar /path/to/Clustering.jar dmatrix --id-mapping all_seqs.ids --in derep.fa --outfile derep_matrix.bin -l 200 --dist-cutoff 0.15
 
 	* perform clustering
+	
 		Three clustering algorithms are available: complete, single and average linkage algorithm.
 		
 			java -Xmx2g -jar /path/to/Clustering.jar cluster --dist-file derep_matrix.bin --id-mapping all_seqs.ids --sample-mapping all_seqs.samples --method complete --outfile all_seq_complete.clust
 
+* Convert a cluster file to a R compatible community data matrix file
+ 			
+ 		java -Xmx2g -jar /path/to/Clustering.jar cluster_to_Rformat all_seq_complete.clust . 0.01 0.03
+ 		
+ 	The resulting output contains a list of tab delimited files containing the number of sequences for each sample for each OTU to each distance within the distance cutoff range. 
+ 	The word "aligned_" or "_trimmed" will be removed if present in the sample name. For ex:
+ 		
+ 			OTU_0000	OTU_0001	OTU_0002	OTU_0003
+ 		USGA_2_7_A	5	8	0	1
+ 		Native_1_4_A	4	13	8	5
+ 			
 * Convert a cluster file to a biom otu table
 
 		java -Xmx2g -jar /path/to/Clustering.jar/Clustering.jar cluster-to-biom all_seq_complete.clust 0.03 > all_seq_complete.clust.biom 
 
 * Get represenative sequences from a cluster file
+
 	If there are more than one alignment files, need to merge them into one file first.
 		
 		java -jar /path/to/AlignmentTools.jar alignment-merger alignment merged_aligned.fasta

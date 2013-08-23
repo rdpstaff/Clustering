@@ -23,6 +23,7 @@ import edu.msu.cme.pyro.cluster.io.ClusterToBiom;
 import edu.msu.cme.pyro.cluster.utils.AlignSeqMatch;
 import edu.msu.cme.pyro.cluster.io.LocalEdgeReader;
 import edu.msu.cme.pyro.cluster.io.RDPClustParser;
+import edu.msu.cme.pyro.cluster.io.RFormatter;
 import edu.msu.cme.pyro.cluster.utils.RepresenativeSeqs;
 import edu.msu.cme.pyro.derep.ExplodeMappings;
 import edu.msu.cme.pyro.derep.IdMapping;
@@ -300,6 +301,21 @@ public class ClusterMain {
         ClusterToBiom.writeCutoff(parser.getCutoff(cutoff), System.out);
         parser.close();
     }
+    
+    private static void convertClusterRformat(String[] args) throws IOException {
+        if (args.length != 4) {
+            System.err.println("USAGE: clusterFile outdir startDist endDist");
+            return;
+        }
+
+        File clusterFile = new File(args[0]);
+        File userTempDir = new File(args[1]);
+        Double startDist = Double.parseDouble(args[2]);
+        Double endDist = Double.parseDouble(args[3]);
+
+        RFormatter.createTabulatedFormatForRange(clusterFile, startDist, endDist, userTempDir);
+        
+    }
 
     public static void printUsage() {
         System.err.println("USAGE: Main <command name> command args...");
@@ -321,6 +337,7 @@ public class ClusterMain {
         System.err.println("\tto-unaligned-fasta         - Convert a sequence file to fasta format");
         System.err.println("\tfilter-seqs      - Remove sequences from a file");
         System.err.println("\tcluster-to-biom  - Convert a cluster file to a biom otu table");
+        System.err.println("\tcluster_to_Rformat  - Convert a cluster file to a R compatible community data matrix file");
         if (hadoop) {
             System.err.println("\thadoop - Calculate distances using hadoop distance calculator");
         }
@@ -374,7 +391,9 @@ public class ClusterMain {
             removeSeqs(newArgs);
         } else if (commandName.equals("cluster-to-biom")) {
             convertClusterBiom(newArgs);
-        } else {
+        } else if (commandName.equals("cluster_to_Rformat")) {
+            convertClusterRformat(newArgs);
+        }else {
             printUsage();
         }
     }

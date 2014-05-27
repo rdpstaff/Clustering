@@ -45,12 +45,19 @@ public class HDFSEdgeReader implements EdgeReader {
     }
 
     public ThinEdge nextThinEdge() throws IOException {
+        return nextThinEdge(new ThinEdge());
+    }
+
+    public ThinEdge nextThinEdge(ThinEdge edge) throws IOException {
         if (seqFile.next(dist, comp)) {
-            return new ThinEdge(comp.getFirst(), comp.getSecond(), dist.get());
+            edge.setSeqi(comp.getFirst());
+            edge.setSeqj(comp.getSecond());
+            edge.setDist(dist.get());
+            return edge;
         } else {
             if (nextPath < files.size()) {
                 loadNextFile();
-                return nextThinEdge();
+                return nextThinEdge(edge);
             } else {
                 return null;
             }

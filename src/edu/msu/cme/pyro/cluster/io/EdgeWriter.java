@@ -23,7 +23,7 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.zip.GZIPOutputStream;
+import java.io.OutputStream;
 
 /**
  *
@@ -34,18 +34,27 @@ public class EdgeWriter {
     private DataOutputStream edgeWriter;
 
     public EdgeWriter(File f) throws IOException {
+        this(new BufferedOutputStream(new FileOutputStream(f)));
+    }
+    
+    public EdgeWriter(OutputStream is) throws IOException {
         //edgeWriter = new DataOutputStream(new BufferedOutputStream(new GZIPOutputStream(new BufferedOutputStream(new FileOutputStream(f), 4096)), 4096));
-        edgeWriter = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(f)));
+        edgeWriter = new DataOutputStream(is);
     }
 
     public void writeEdge(ThinEdge edge) throws IOException {
-        if(edge.getSeqi() == edge.getSeqj()) {
+        
+        writeEdge(edge.getSeqi(), edge.getSeqj(), edge.getDist());
+    }
+    
+    public void writeEdge(int seqi, int seqj, int dist) throws IOException {
+        if(seqi == seqj) {
             throw new IOException("I refuse to write an identity edge");
         }
+        edgeWriter.writeInt(seqi);
+        edgeWriter.writeInt(seqj);
+        edgeWriter.writeInt(dist);
         
-        edgeWriter.writeInt(edge.getSeqi());
-        edgeWriter.writeInt(edge.getSeqj());
-        edgeWriter.writeInt(edge.getDist());
     }
 
     public void close() throws IOException {

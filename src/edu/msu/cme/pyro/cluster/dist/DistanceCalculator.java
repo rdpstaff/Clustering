@@ -183,7 +183,7 @@ public class DistanceCalculator {
                 }
 
                 if (dist < cutoff) {
-                    edges.add(new ThinEdge(seq1Id, seq2Id, (int) (dist * MULTIPLIER)));
+                    edges.add(new ThinEdge(seq1Id, seq2Id, (int) ((dist * MULTIPLIER) + .5)));
                     edgesWritten++;
                 }
 
@@ -300,7 +300,7 @@ public class DistanceCalculator {
         }
 
         Map<String, Integer> reverseMapping = idMapping.getReverseMapping();
-        System.err.println("Read mapping for " + reverseMapping.size() + " seqs (memratio=" + ClusterUtils.getMemRatio() + ")");
+        System.err.println("Read mapping for " + reverseMapping.size() + " sequences (memratio=" + ClusterUtils.getMemRatio() + ")");
         System.err.println("Starting distance computations, predicted max edges=" + ((long) numSeqs * numSeqs) + ", at=" + new Date());
 
         long startTime = System.currentTimeMillis();

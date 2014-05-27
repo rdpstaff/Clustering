@@ -122,11 +122,14 @@ public class Dereplicator {
         return ret.toString();
     }
 
+    private static enum DerepMode { unaligned, aligned, model_only, formatted_model };
+
     public static void main(String... args) throws IOException, SequenceParsingException, MaskSequenceNotFoundException {
         Options options = new Options();
         options.addOption("u", "unaligned", false, "Dereplicate unaligned sequences");
         options.addOption("a", "aligned", false, "Dereplicate unaligned sequences");
         options.addOption("m", "model-only", true, "Dereplicate aligned sequences using mask sequence");
+        options.addOption("f", "formatted", false, "Dereplicate formated (uppercase/- = comparable, lowercase/. = non-comparable) aligned sequences");
         options.addOption("g", "keep-common-gaps", false, "Don't remove common gaps in output sequences");
 
         options.addOption("q", "qual-out", true, "Write quality sequences to this file");
@@ -134,8 +137,8 @@ public class Dereplicator {
 
         FastaWriter qualOut = null;
         FastaWriter seqWriter = new FastaWriter(System.out);
+        DerepMode mode = DerepMode.unaligned;
         String maskId = null;
-        boolean aligned = false;
         boolean keepCommonGaps;
 
         Dereplicator derep = new Dereplicator();
@@ -145,13 +148,17 @@ public class Dereplicator {
             CommandLine line = new PosixParser().parse(options, args);
 
             if (line.hasOption("unaligned")) {
-                aligned = false;
+                mode = DerepMode.unaligned;
             } else if (line.hasOption("aligned")) {
-                aligned = true;
+                mode = DerepMode.aligned;
             } else if (line.hasOption("model-only")) {
-                aligned = true;
+                mode = DerepMode.model_only;
                 maskId = line.getOptionValue("model-only");
                 System.err.println("Using " + maskId + " as mask sequence");
+            } else if(line.hasOption("formatted")) {
+                mode = DerepMode.formatted_model;
+            } else {
+                System.err.println("Warning, no derep mode specified, using unaligned");
             }
 
             if (line.hasOption("qual-out")) {
@@ -166,7 +173,7 @@ public class Dereplicator {
 
             if (line.getArgs().length < 3) {
                 throw new Exception("Too few arguments");
-            } else if (aligned && maskId == null && line.getArgs().length > 3) {
+            } else if (mode == DerepMode.aligned && line.getArgs().length > 3) {
                 throw new Exception("Cannot dereplicate multiple aligned files, try using a mask sequence instead");
             }
 
@@ -183,7 +190,7 @@ public class Dereplicator {
                 }
 
                 System.err.println("Processing " + arg);
-                if (maskId != null) {
+                if (mode == DerepMode.model_only) {
                     IndexedSeqReader reader = new IndexedSeqReader(new File(arg), maskId);
 
                     for (String seqid : reader.getSeqIdSet()) {
@@ -217,8 +224,10 @@ public class Dereplicator {
 
                         totalSeqs++;
 
-                        if (!aligned) {
+                        if (mode == DerepMode.unaligned) {
                             seq = SeqUtils.getUnalignedSeq(seq);
+                        } else if(mode == DerepMode.formatted_model) {
+                            seq = SeqUtils.getMaskedBySeqString(seq);
                         }
 
                         derep.addSeq(seq);
@@ -238,7 +247,7 @@ public class Dereplicator {
             int count = 0;
             IdMapping<Integer> idMapping = new IdMapping<Integer>();
 
-            if (!aligned) {
+            if (mode == DerepMode.unaligned) {
                 for (Sequence seq : uniqueSeqs.keySet()) {
                     List<String> ids = uniqueSeqs.get(seq);
                     idMapping.addIds(count++, ids);
@@ -269,7 +278,7 @@ public class Dereplicator {
                     seqWriter.writeSeq(seq.getSeqName(), seq.getDesc() + ";size=" + ids.size() + ";", seqString);
                 }
 
-                if (maskId == null) {
+                if (mode == DerepMode.aligned) {
                     for (Sequence seq : echoSeqs) {
                         String seqString = seq.getSeqString();
 

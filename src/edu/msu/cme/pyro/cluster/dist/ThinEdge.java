@@ -26,6 +26,9 @@ public class ThinEdge implements Comparable<ThinEdge> {
     private int seqj;
     private int dist;
 
+    public ThinEdge() {
+    }
+
     public ThinEdge(int seqi, int seqj, int dist) {
         this.seqi = seqi;
         this.seqj = seqj;
@@ -42,6 +45,18 @@ public class ThinEdge implements Comparable<ThinEdge> {
 
     public int getDist() {
         return dist;
+    }
+
+    public void setSeqi(int seqi) {
+        this.seqi = seqi;
+    }
+
+    public void setSeqj(int seqj) {
+        this.seqj = seqj;
+    }
+
+    public void setDist(int dist) {
+        this.dist = dist;
     }
 
     public int compareTo(ThinEdge o) {

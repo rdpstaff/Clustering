@@ -23,6 +23,8 @@ import edu.msu.cme.rdp.hadoop.utils.AlignedIntSeqStore;
 import edu.msu.cme.rdp.hadoop.utils.HadoopClustering;
 import edu.msu.cme.rdp.hadoop.utils.IntSeq;
 import edu.msu.cme.rdp.readseq.readers.IndexedSeqReader;
+import edu.msu.cme.rdp.readseq.readers.SequenceReader;
+import edu.msu.cme.rdp.readseq.readers.SeqReader;
 import edu.msu.cme.rdp.readseq.readers.Sequence;
 import java.io.File;
 import java.util.Arrays;
@@ -57,11 +59,11 @@ public class HadoopMain {
                 System.exit(1);
             }
 
-            IndexedSeqReader reader = null;
+            SeqReader reader = null;
             if (args.length == 4) {
                 reader = new IndexedSeqReader(new File(args[0]), args[3]);
             } else {
-                reader = new IndexedSeqReader(new File(args[0]));
+                reader = new SequenceReader(new File(args[0]));
             }
 
             Map<String, Integer> mapping = IdMapping.fromFile(new File(args[1])).getReverseMapping();
@@ -69,18 +71,13 @@ public class HadoopMain {
             try {
                 Sequence seq;
 
-                String last = null;
-                for(String seqid : reader.getSeqIds()) {
-                    seq = reader.readSeq(seqid);
-                    
+		while((seq = reader.readNextSequence()) != null) {
                     try {
                         store.addSeq(IntSeq.createSeq(mapping.get(seq.getSeqName()), seq.getSeqString()));
                     } catch (Exception e) {
-                        System.out.println("\"" + last + "\"");
                         System.out.println("\"" + seq.getSeqString() + "\"");
                         throw e;
                     }
-                    last = seq.getSeqString();
                 }
             } finally {
                 store.close();

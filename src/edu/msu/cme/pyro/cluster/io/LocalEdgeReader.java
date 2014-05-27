@@ -38,16 +38,20 @@ public class LocalEdgeReader implements EdgeReader {
     }
 
     public ThinEdge nextThinEdge() throws IOException {
-        try {
-            int seqi = edgeStream.readInt();
-            int seqj = edgeStream.readInt();
-            int dist = edgeStream.readInt();
+        return nextThinEdge(new ThinEdge());
+    }
 
-            if(seqi == seqj) {
+    public ThinEdge nextThinEdge(ThinEdge edge) throws IOException {
+        try {
+            edge.setSeqi(edgeStream.readInt());
+            edge.setSeqj(edgeStream.readInt());
+            edge.setDist(edgeStream.readInt());
+
+            if(edge.getSeqi() == edge.getSeqj()) {
                 throw new IOException("Identity edges can't be present in the column matrix");
             }
 
-            return new ThinEdge(seqi, seqj, dist);
+            return edge;
         } catch(EOFException e) {
             return null;
         }

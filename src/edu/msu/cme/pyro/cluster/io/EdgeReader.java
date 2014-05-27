@@ -26,5 +26,6 @@ import java.io.IOException;
  */
 public interface EdgeReader {
     public ThinEdge nextThinEdge() throws IOException;
+    public ThinEdge nextThinEdge(ThinEdge edge) throws IOException;
     public void close() throws IOException;
 }

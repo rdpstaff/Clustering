@@ -260,6 +260,20 @@ public final class RDPClustParser {
         return readCutoff(bestMatch);
     }
 
+    public boolean containsAtLeastOne(double dFrom, double dTo) {
+        int from = cutoffDoubleToInt(dFrom);
+        int to = cutoffDoubleToInt(dTo);
+        
+        for (Integer cutoff : cutoffs) {
+
+            if (cutoff >= from && cutoff <= to) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public List<Cutoff> getCutoffs(double dFrom, double dTo) throws IOException {
         int from = cutoffDoubleToInt(dFrom);
         int to = cutoffDoubleToInt(dTo);
@@ -343,7 +357,7 @@ public final class RDPClustParser {
                 return null;
             }
         } while ( line.trim().equals(""));
-                
+
         lexemes = line.split("\\s+");
         if (lexemes[0].equals("distance") && lexemes[1].equals("cutoff:") && lexemes.length == 3) {
             cutoff = lexemes[2];
@@ -410,7 +424,7 @@ public final class RDPClustParser {
                         throw new IOException("Malformed cluster line in cutoff " + cutoff + ": \"" + line + "\"");
                     }
                 }
-                
+
                 int currClustId = 0;
                 int seqCount = 0;
 

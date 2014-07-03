@@ -87,7 +87,7 @@ public class ClusterFileOutput implements ClusterOutput {
         double actualStep = step / (double)DistanceCalculator.MULTIPLIER;
         out.println("distance cutoff:\t" + format.format(actualStep));
         out.println("Total Clusters:\t" + (clusters.size() + unseenIds.size()));
-        int clusterCount = 0;
+        int clusterCount = 1;
         for (Cluster c : clusters) {
             Set<Integer> sids = factory.getSeqsInCluster(c);
             Set<String> ids = new LinkedHashSet();

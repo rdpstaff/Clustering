@@ -54,10 +54,11 @@ public class RepresenativeSeqs {
         options.addOption("I", "id-mapping", true, "Id mapping used when clustering [required if using dereplicated seq file]");
         options.addOption("s", "one-rep-per-otu", false, "One representative sequence for each OTU. Default is false. The default"
                 + " returns one rep seq for each sample at each OTU");
+        options.addOption("c", "use-cluster-id", false, "Use the cluster id as the seq id.");
     }
 
 
-    public static Map<String, List<Sequence>> getRepresenativeSeqs(RDPClustParser parser, String cutoffStr, IndexedSeqReader seqReader, String maskId, IdMapping<Integer> idMapping, Set<String> prefSeqids, boolean invert, DistanceModel m, int overlapMin) throws OverlapCheckFailedException, IOException {
+    public static Map<String, List<Sequence>> getRepresenativeSeqs(RDPClustParser parser, String cutoffStr, IndexedSeqReader seqReader, String maskId, IdMapping<Integer> idMapping, Set<String> prefSeqids, boolean invert, DistanceModel m, int overlapMin, boolean useClusterID) throws OverlapCheckFailedException, IOException {
         Map<String, List<Sequence>> ret = new HashMap();
         for (ClusterSample sample : parser.getClusterSamples()) {
             ret.put(sample.getName(), new ArrayList());
@@ -105,7 +106,7 @@ public class RepresenativeSeqs {
 
                 List<Sequence> seqs = seqReader.readSeqs(seqsInClust);
 
-                Sequence repSeq = getRep(seqs, clust.getId(), maskSeq, realSeqids, prefSeqids, invert, m, overlapMin );
+                Sequence repSeq = getRep(seqs, clust.getId(), maskSeq, realSeqids, prefSeqids, invert, m, overlapMin, useClusterID );
                 ret.get(sample).add(repSeq);
                 if (!prefSeqids.contains(repSeq.getSeqName())) {
                     nonPreferedSeqs++;
@@ -116,12 +117,10 @@ public class RepresenativeSeqs {
             }
         }
 
-        System.err.println(preferedSeqs + " preferedSeqs, " + nonPreferedSeqs + " nonPreferedSeqs ");
-
         return ret;
     }
 
-    public static void printOneRepresenativeSeqPerOTU(RDPClustParser parser, String cutoffStr, IndexedSeqReader seqReader, String maskId, IdMapping<Integer> idMapping, Set<String> prefSeqids, boolean invert, DistanceModel m, int overlapMin, FastaWriter out) throws OverlapCheckFailedException, IOException {
+    public static void printOneRepresenativeSeqPerOTU(RDPClustParser parser, String cutoffStr, IndexedSeqReader seqReader, String maskId, IdMapping<Integer> idMapping, Set<String> prefSeqids, boolean invert, DistanceModel m, int overlapMin, FastaWriter out, boolean useClusterID) throws OverlapCheckFailedException, IOException {
         Cutoff cutoff = parser.getCutoff(cutoffStr);
 
         int preferedSeqs = 0;
@@ -183,8 +182,7 @@ public class RepresenativeSeqs {
 
             List<Sequence> seqs = seqReader.readSeqs(seqsInClust);
 
-	    System.err.println("Getting representative sequences for " + clusterID + " unique seqs=" + seqsInClust.size());
-            Sequence repSeq = getRep(seqs, clusterID, maskSeq, new ArrayList(seqsInClust), prefSeqids, invert, m, overlapMin );
+            Sequence repSeq = getRep(seqs, clusterID, maskSeq, new ArrayList(seqsInClust), prefSeqids, invert, m, overlapMin, useClusterID );
 	    out.writeSeq(repSeq);
             if (!prefSeqids.contains(repSeq.getSeqName())) {
                 nonPreferedSeqs++;
@@ -193,11 +191,9 @@ public class RepresenativeSeqs {
             }
         }
 
-
-        System.err.println(preferedSeqs + " preferedSeqs, " + nonPreferedSeqs + " nonPreferedSeqs ");
     }
 
-    private static Sequence getRep(List<Sequence> seqs, int clusterID, char[] maskSeq, List<String> realSeqids, Set<String> prefSeqids, boolean invert, DistanceModel m, int overlapMin) throws OverlapCheckFailedException, IOException{
+    private static Sequence getRep(List<Sequence> seqs, int clusterID, char[] maskSeq, List<String> realSeqids, Set<String> prefSeqids, boolean invert, DistanceModel m, int overlapMin, boolean useClusterID) throws OverlapCheckFailedException, IOException{
 
         int bestSeq = -1;
         int bestPrefSeq = -1;
@@ -237,7 +233,7 @@ public class RepresenativeSeqs {
                     bestSeq = index;
                     bestScore = score;
                 }
-
+                
                 boolean contained = prefSeqids.contains(realSeqids.get(index));
                 boolean preferred = (contained && !invert) || (!contained && invert);
 
@@ -275,11 +271,20 @@ public class RepresenativeSeqs {
             }
         }
 
-
+        
         if (bestPrefSeq == -1) {
-            return new Sequence(realSeqids.get(bestSeq), "prefered=false,cluster=" + clusterID + ",clustsize=" + seqs.size(), seqs.get(bestSeq).getSeqString());
+            if(useClusterID){
+                return new Sequence("cluster_" + clusterID, "seq_id=" + realSeqids.get(bestSeq) + ",prefered=false,cluster=" + clusterID + ",clustsize=" + seqs.size(), seqs.get(bestSeq).getSeqString());
+            } else {
+                return new Sequence(realSeqids.get(bestSeq), "prefered=false,cluster=" + clusterID + ",clustsize=" + seqs.size(), seqs.get(bestSeq).getSeqString());
+            }
         } else {
-            return new Sequence(realSeqids.get(bestPrefSeq), "prefered=true,cluster=" + clusterID + ",clustsize=" + seqs.size(), seqs.get(bestPrefSeq).getSeqString());
+            if(useClusterID){
+                return new Sequence("cluster_" + clusterID, "seq_id=" + realSeqids.get(bestPrefSeq) + ",prefered=true,cluster=" + clusterID + ",clustsize=" + seqs.size(), seqs.get(bestPrefSeq).getSeqString());
+            } else{
+                return new Sequence(realSeqids.get(bestPrefSeq), "prefered=true,cluster=" + clusterID + ",clustsize=" + seqs.size(), seqs.get(bestPrefSeq).getSeqString());
+
+            }
         }
 
 
@@ -294,6 +299,7 @@ public class RepresenativeSeqs {
         IdMapping<Integer> idMapping = null;
         DistanceModel model;
         boolean oneRepPerOTU = false;
+        boolean useClusterID = false;
 
         try {
             CommandLine line = new PosixParser().parse(options, args);
@@ -329,6 +335,9 @@ public class RepresenativeSeqs {
             if (line.hasOption("one-rep-per-otu")) {
                 oneRepPerOTU = true;
             }
+            if (line.hasOption("use-cluster-id")) {
+                useClusterID = true;
+            }
 
             invert = line.hasOption("invert");
 
@@ -353,7 +362,7 @@ public class RepresenativeSeqs {
 
         Map<String, List<Sequence>> repSeqMap = null;
         if ( !oneRepPerOTU){
-            repSeqMap = RepresenativeSeqs.getRepresenativeSeqs(clustParser, cutoffStr, seqReader, maskSeqId, idMapping, prefSeqids, invert, model, 1);
+            repSeqMap = RepresenativeSeqs.getRepresenativeSeqs(clustParser, cutoffStr, seqReader, maskSeqId, idMapping, prefSeqids, invert, model, 1, useClusterID);
 	    for (String sample : repSeqMap.keySet()) {
 		FastaWriter writer = new FastaWriter(new File(outputDir, sample + "_representatives.fasta"));
 		for (Sequence s : repSeqMap.get(sample)) {
@@ -362,8 +371,8 @@ public class RepresenativeSeqs {
 		writer.close();
 	    }
         } else {
-	    FastaWriter out = new FastaWriter(new File(outputDir, clustFile + "_rep_seqs.fasta"));
-            RepresenativeSeqs.printOneRepresenativeSeqPerOTU(clustParser, cutoffStr, seqReader, maskSeqId, idMapping, prefSeqids, invert, model, 1, out);
+	    FastaWriter out = new FastaWriter(new File(outputDir, clustFile.getName() + "_rep_seqs.fasta"));
+            RepresenativeSeqs.printOneRepresenativeSeqPerOTU(clustParser, cutoffStr, seqReader, maskSeqId, idMapping, prefSeqids, invert, model, 1, out, useClusterID);
 	    out.close();
         }
         clustParser.close();

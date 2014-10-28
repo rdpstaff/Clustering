@@ -14,6 +14,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
@@ -37,14 +38,24 @@ public class ClusterToBiom {
         out.println("\"date\" : \"" + df.format(new Date()) + "\",");
     }
 
-    private static void writeRowsHeader(final int numClusters, PrintStream out) {
+    private static void writeRowsHeader( Cutoff c, PrintStream out) {
+        Map<String, List<Cluster>> clusters = c.getClusters();
         out.println("\"rows\" : [");
-        for(int index = 0;index < numClusters;index++) {
-            out.print("\t {\"id\" : \"cluster_" + (index + 1) +"\", \"metadata\" : null }");
-            if(index + 1 != numClusters) {
-                out.print(",");
+        HashSet<Integer> seenCluster = new HashSet<Integer>();
+        int index = 0;
+        for( List<Cluster> clusterList: clusters.values()) {
+            for ( Cluster clust: clusterList){
+                if ( !seenCluster.contains(clust.getId())) {
+                    // should print out the cluster id
+                    out.print("\t {\"id\" : \"cluster_" + clust.getId() +"\", \"metadata\" : null }");
+                    if(index + 1 != c.getNumClusters()) {
+                        out.print(",");
+                    }
+                    out.println();
+                    seenCluster.add(clust.getId());
+                    index++;
+                }
             }
-            out.println();
         }
         out.println("],");
     }
@@ -68,7 +79,7 @@ public class ClusterToBiom {
         out.println("{");
 
         writeHeader(out);
-        writeRowsHeader(c.getNumClusters(), out);
+        writeRowsHeader(c, out);
         writeColsHeader(sampleNames, out);
 
         out.println("\"matrix_type\": \"dense\",");
@@ -94,10 +105,13 @@ public class ClusterToBiom {
     }
 
     public static void main(String[] args) throws IOException {
-        RDPClustParser parser = new RDPClustParser(new File("test.clust"), false);
+        if( args.length != 3){
+            throw new IllegalArgumentException("Usage: clusterfile out.biom distance");
+        }
+        RDPClustParser parser = new RDPClustParser(new File(args[0]), false);
 
-        PrintStream out = new PrintStream("test.biom");
-        writeCutoff(parser.getCutoff("0.03"), out);
+        PrintStream out = new PrintStream(args[1]);
+        writeCutoff(parser.getCutoff(args[2]), out);
         out.close();
     }
 }

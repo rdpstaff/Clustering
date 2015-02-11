@@ -31,6 +31,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.*;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
@@ -44,7 +45,8 @@ import org.apache.commons.cli.PosixParser;
 public class RepresenativeSeqs {
 
     private static final Options options = new Options();
-
+    private static final DecimalFormat f = new DecimalFormat("####0.#####");
+    
     static {
         options.addOption("o", "out", true, "Output directory (default=.)");
         options.addOption("m", "mask-seq", true, "Mask sequence id");
@@ -197,10 +199,11 @@ public class RepresenativeSeqs {
 
         int bestSeq = -1;
         int bestPrefSeq = -1;
-
+        double bestScore = Double.MAX_VALUE;
+        double bestPrefScore = Double.MAX_VALUE;
+        double maxDist = 0;
         if (m != null) {
-            double bestScore = Double.MAX_VALUE;
-            double bestPrefScore = Double.MAX_VALUE;
+            
             double[][] subMatrix = new double[seqs.size()][seqs.size()];
 
             for (int s1 = 0; s1 < subMatrix.length; s1++) {
@@ -226,7 +229,13 @@ public class RepresenativeSeqs {
             for (int index = 0; index < subMatrix.length; index++) {
                 double score = 0;
                 for (int col = 0; col < subMatrix[index].length; col++) {
-                    score += subMatrix[index][col] * subMatrix[index][col];
+                     if (index == col) {
+                        continue;
+                    }
+                    score += subMatrix[index][col] * subMatrix[index][col];                    
+                    if (subMatrix[index][col] > maxDist) {
+                        maxDist = subMatrix[index][col];
+                    }
                 }
 
                 if (score < bestScore) {
@@ -271,12 +280,21 @@ public class RepresenativeSeqs {
             }
         }
 
+        // if we choose the longest seq from an OTU, these values are not available
+        String maxDistStr = "NA";
+        if ( m != null){
+            maxDistStr = f.format(maxDist);
+        }
+        String minSumSquareStr = "NA";
+        if ( m != null){
+            minSumSquareStr = f.format(bestScore);
+        }
         
         if (bestPrefSeq == -1) {
             if(useClusterID){
-                return new Sequence("cluster_" + clusterID, "seq_id=" + realSeqids.get(bestSeq) + ",prefered=false,cluster=" + clusterID + ",clustsize=" + seqs.size(), seqs.get(bestSeq).getSeqString());
+                return new Sequence("cluster_" + clusterID, "seq_id=" + realSeqids.get(bestSeq) + ",prefered=false,cluster=" + clusterID + ",clustsize=" + seqs.size() + ",maxDist=" + maxDistStr + ",minSumSquare=" + minSumSquareStr, seqs.get(bestSeq).getSeqString());
             } else {
-                return new Sequence(realSeqids.get(bestSeq), "prefered=false,cluster=" + clusterID + ",clustsize=" + seqs.size(), seqs.get(bestSeq).getSeqString());
+                return new Sequence(realSeqids.get(bestSeq), "prefered=false,cluster=" + clusterID + ",clustsize=" + seqs.size() + ",maxDist=" + maxDistStr + ",minSumSquare=" + minSumSquareStr, seqs.get(bestSeq).getSeqString());
             }
         } else {
             if(useClusterID){

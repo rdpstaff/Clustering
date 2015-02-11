@@ -303,17 +303,21 @@ public class ClusterMain {
     }
     
     private static void convertClusterRformat(String[] args) throws IOException {
-        if (args.length != 4) {
-            System.err.println("USAGE: clusterFile outdir startDist endDist");
-            return;
+        if (args.length != 4 && args.length != 5) {
+            throw new IllegalArgumentException("Usage: clusterFile outdir startDist endDist [idcountmap]" 
+            + "\n idcountmap file contains the seqID and count separated by space or tab");
         }
 
         File clusterFile = new File(args[0]);
         File userTempDir = new File(args[1]);
         Double startDist = Double.parseDouble(args[2]);
         Double endDist = Double.parseDouble(args[3]);
+        File idcountmapFile = null;
+        if ( args.length == 5){
+            idcountmapFile = new File(args[4]);
+        }
 
-        RFormatter.createTabulatedFormatForRange(clusterFile, startDist, endDist, userTempDir);
+        RFormatter.createTabulatedFormatForRange(clusterFile, startDist, endDist, userTempDir, idcountmapFile);
         
     }
 

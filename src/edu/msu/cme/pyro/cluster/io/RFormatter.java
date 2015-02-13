@@ -26,6 +26,7 @@ public class RFormatter {
         String line = null;
         BufferedReader reader = new BufferedReader(new FileReader(file));
         while( (line = reader.readLine()) != null){
+            if ( line.startsWith("#")) continue;
             String[] val = line.split("\\s+");
             idcountMap.put(val[0], Double.parseDouble(val[1]));
         }
@@ -92,7 +93,7 @@ public class RFormatter {
 
     /**
      * This is slower than the one without idcountmap because it needs to check every sequence ID in the cluster to find the mapping count. 
-     * This should be called only when the OTU counts need to be adjusted by the id mapping counts
+     * This should be called only when the OTU counts need to be adjusted by the sequence coverage counts
      * @param cutoff
      * @param stream
      * @param idcountmap
@@ -123,6 +124,9 @@ public class RFormatter {
                 double mappingCount = 0;
                 Set<String> seqs = cutoff.getClustersToSeqs().get(clust);
                 for ( String s: seqs){
+                    if ( idcountmap.get(s) == null ){
+                        throw new IllegalArgumentException("Can not find ID count in idcountmap for sequence " +  s);
+                    }
                     mappingCount += idcountmap.get(s);
                 }
             
@@ -219,8 +223,9 @@ public class RFormatter {
 
     public static void main(String[] args) throws IOException {
         if (args.length != 4 && args.length != 5) {
-            throw new IllegalArgumentException("Usage: clusterFile outdir startDist endDist [idcountmap]" 
-             + "\n idcountmap file contains the seqID and count separated by space or tab");
+            throw new IllegalArgumentException("Usage: clusterFile outdir startDist endDist [seqCoverage]" 
+             + "\n seqCoverage file contains the seqID and coverage separated by space or tab. Decimals allowed for coverage."
+             + "\n This can be used to adjust the sequence abundance by coverage (Xander assembly)");
         }
 
         File clusterFile = new File(args[0]);

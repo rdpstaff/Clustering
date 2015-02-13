@@ -305,7 +305,8 @@ public class ClusterMain {
     private static void convertClusterRformat(String[] args) throws IOException {
         if (args.length != 4 && args.length != 5) {
             throw new IllegalArgumentException("Usage: clusterFile outdir startDist endDist [idcountmap]" 
-            + "\n idcountmap file contains the seqID and count separated by space or tab");
+            + "\n idcountmap file contains the seqID and count separated by space or tab. Decimals allowed."
+             + "\n This can be used to adjust the sequence abundance by coverage (Xander assembly)");
         }
 
         File clusterFile = new File(args[0]);

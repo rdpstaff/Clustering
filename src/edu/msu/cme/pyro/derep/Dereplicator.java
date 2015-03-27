@@ -10,7 +10,6 @@ import edu.msu.cme.rdp.readseq.QSequence;
 import edu.msu.cme.rdp.readseq.readers.Sequence;
 import edu.msu.cme.rdp.readseq.SequenceParsingException;
 import edu.msu.cme.rdp.readseq.readers.IndexedSeqReader;
-import edu.msu.cme.rdp.readseq.readers.QSeqReader;
 import edu.msu.cme.rdp.readseq.readers.SequenceReader;
 import edu.msu.cme.rdp.readseq.utils.SeqUtils;
 import java.io.File;
@@ -18,12 +17,14 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
@@ -77,20 +78,38 @@ public class Dereplicator {
         exemplar.ids.add(seq.getSeqName());
     }
 
-    public Map<Sequence, List<String>> getUniqueSeqs() {
-        Map<Sequence, List<String>> seqToIds = new LinkedHashMap<Sequence, List<String>>();
+    public Set<DerepSeq> getUniqueSeqs() {
+        Set<DerepSeq> seqToIds = new HashSet<DerepSeq>();
         for (DerepSeq seq : seqs) {
-            seqToIds.put(seq.seq, seq.ids);
+            seqToIds.add(seq);
         }
         return seqToIds;
     }
 
+    public Set<DerepSeq> getSortedUniqueSeqs() {
+        Set<DerepSeq> seqToIds = new TreeSet<DerepSeq>(new SeqComparator());
+        for (DerepSeq seq : seqs) {
+            seqToIds.add(seq);
+        }
+        return seqToIds;
+    }
+    
+    public static class SeqComparator implements Comparator {
+        public int compare(Object a, Object b){
+            if ( ((DerepSeq)a).ids.size() < ((DerepSeq)b).ids.size()){
+                return 1;
+            } else {
+                return -1;
+            }
+        }
+    }
+    
     private static Set<Integer> idGapCols(Dereplicator derep) {
         Set<Integer> ret = null;
 
-        for (Sequence seq : derep.getUniqueSeqs().keySet()) {
+        for (DerepSeq seq : derep.getUniqueSeqs()) {
             Set<Integer> gaps = new HashSet();
-            char[] bases = seq.getSeqString().toCharArray();
+            char[] bases = seq.seq.getSeqString().toCharArray();
 
             for (int index = 0; index < bases.length; index++) {
                 char c = bases[index];
@@ -134,12 +153,15 @@ public class Dereplicator {
 
         options.addOption("q", "qual-out", true, "Write quality sequences to this file");
         options.addOption("o", "out", true, "Write sequences to this file");
+        
+        options.addOption("s", "sorted", false, "Sort sequence by number of members represented");
 
         FastaWriter qualOut = null;
         FastaWriter seqWriter = new FastaWriter(System.out);
         DerepMode mode = DerepMode.unaligned;
         String maskId = null;
         boolean keepCommonGaps;
+        boolean sorted = false;
 
         Dereplicator derep = new Dereplicator();
         SampleMapping<String> sampleMapping = new SampleMapping<String>();
@@ -170,6 +192,7 @@ public class Dereplicator {
             }
 
             keepCommonGaps = line.hasOption("keep-common-gaps");
+            sorted = line.hasOption("sorted");
 
             if (line.getArgs().length < 3) {
                 throw new Exception("Too few arguments");
@@ -242,40 +265,45 @@ public class Dereplicator {
             File sampleMappingFile = new File(line.getArgs()[1]);
 
             sampleMapping.toStream(new PrintStream(new FileOutputStream(sampleMappingFile)));
-
-            Map<Sequence, List<String>> uniqueSeqs = derep.getUniqueSeqs();
+            
+            Set<DerepSeq> uniqueSeqs = null;
+            if(!sorted){
+                uniqueSeqs = derep.getUniqueSeqs();
+            } else {
+                uniqueSeqs = derep.getSortedUniqueSeqs();
+            }
             int count = 0;
             IdMapping<Integer> idMapping = new IdMapping<Integer>();
 
             if (mode == DerepMode.unaligned) {
-                for (Sequence seq : uniqueSeqs.keySet()) {
-                    List<String> ids = uniqueSeqs.get(seq);
+                for (DerepSeq seq : uniqueSeqs) {
+                    List<String> ids = seq.ids;
                     idMapping.addIds(count++, ids);
-                    seqWriter.writeSeq(seq.getSeqName(), seq.getDesc() + ";size=" + ids.size() + ";", seq.getSeqString());
+                    seqWriter.writeSeq(seq.seq.getSeqName(), seq.seq.getDesc() + ";size=" + ids.size() + ";", seq.seq.getSeqString());
 
-                    if (qualOut != null && seq instanceof QSequence) {
+                    if (qualOut != null && seq.seq instanceof QSequence) {
                         String qseqStr = "";
-                        QSequence qseq = (QSequence) seq;
+                        QSequence qseq = (QSequence) seq.seq;
                         for (int index = 0; index < qseq.getQuality().length; index++) {
                             qseqStr += qseq.getQuality()[index] + "  ";
                         }
 
-                        qualOut.writeSeq(seq.getSeqName(), qseqStr);
+                        qualOut.writeSeq(seq.seq.getSeqName(), qseqStr);
                     }
                 }
             } else {
                 Set<Integer> allGapCols = idGapCols(derep);
 
-                for (Sequence seq : uniqueSeqs.keySet()) {
-                    List<String> ids = uniqueSeqs.get(seq);
+                for (DerepSeq seq : uniqueSeqs) {
+                    List<String> ids = seq.ids;
                     idMapping.addIds(count++, ids);
 
-                    String seqString = seq.getSeqString();
+                    String seqString = seq.seq.getSeqString();
 
                     if (!keepCommonGaps) {
                         seqString = removeCommonGaps(allGapCols, seqString);
                     }
-                    seqWriter.writeSeq(seq.getSeqName(), seq.getDesc() + ";size=" + ids.size() + ";", seqString);
+                    seqWriter.writeSeq(seq.seq.getSeqName(), seq.seq.getDesc() + ";size=" + ids.size() + ";", seqString);
                 }
 
                 if (mode == DerepMode.aligned) {

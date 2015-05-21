@@ -146,7 +146,7 @@ public class Dereplicator {
     public static void main(String... args) throws IOException, SequenceParsingException, MaskSequenceNotFoundException {
         Options options = new Options();
         options.addOption("u", "unaligned", false, "Dereplicate unaligned sequences");
-        options.addOption("a", "aligned", false, "Dereplicate unaligned sequences");
+        options.addOption("a", "aligned", false, "Dereplicate aligned sequences");
         options.addOption("m", "model-only", true, "Dereplicate aligned sequences using mask sequence");
         options.addOption("f", "formatted", false, "Dereplicate formated (uppercase/- = comparable, lowercase/. = non-comparable) aligned sequences");
         options.addOption("g", "keep-common-gaps", false, "Don't remove common gaps in output sequences");
@@ -158,7 +158,7 @@ public class Dereplicator {
 
         FastaWriter qualOut = null;
         FastaWriter seqWriter = new FastaWriter(System.out);
-        DerepMode mode = DerepMode.unaligned;
+        DerepMode mode = null;
         String maskId = null;
         boolean keepCommonGaps;
         boolean sorted = false;
@@ -171,16 +171,30 @@ public class Dereplicator {
 
             if (line.hasOption("unaligned")) {
                 mode = DerepMode.unaligned;
-            } else if (line.hasOption("aligned")) {
+            } 
+            if (line.hasOption("aligned")) {
+                if ( mode != null){
+                    throw new Exception("Already specified mode \"" + mode.toString() + "\", can not take option " + "--aligned");
+                }
                 mode = DerepMode.aligned;
-            } else if (line.hasOption("model-only")) {
+            } 
+            if (line.hasOption("model-only")) {
+                if ( mode != null){
+                    throw new Exception("Already specified mode \""  + mode.toString() + "\", can not take option " + "--model-only");
+                }
                 mode = DerepMode.model_only;
                 maskId = line.getOptionValue("model-only");
                 System.err.println("Using " + maskId + " as mask sequence");
-            } else if(line.hasOption("formatted")) {
+            } 
+            if(line.hasOption("formatted")) {
+                if ( mode != null){
+                    throw new Exception("Already specified mode \""  + mode.toString() + "\", can not take option " + "--formatted");
+                }
                 mode = DerepMode.formatted_model;
-            } else {
+            } 
+            if ( mode == null) {
                 System.err.println("Warning, no derep mode specified, using unaligned");
+                mode = DerepMode.unaligned;
             }
 
             if (line.hasOption("qual-out")) {

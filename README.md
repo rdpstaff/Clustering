@@ -65,7 +65,7 @@ ignoring positions where either or both sequences have a gap. Sequences must ove
 
 * Convert a sequence file to fasta format		
 
-		java -Xmx2g -jar /path/to/Clustering.jar to-fasta sample_1_aligned.stk sample_1_aligned.fasta
+		java -Xmx2g -jar /path/to/Clustering.jar to-fasta sample_1_aligned.stk > sample_1_aligned.fasta
 		
 * Remove mapping entries for sequences externally filtered
 
